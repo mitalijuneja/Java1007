@@ -1,180 +1,83 @@
-package assignment3;
+package assignment4;
+
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import java.awt.Component;
+import javax.swing.event.*;
 
 
 /**
  * 
- * @author Mitali Juneja (mj2944)
- * Our system contains 4 classes, the TSVFilter class, the TSVPipeline class, the TSVTerminal class, and the TSVFormatter class, as well as
- * the enum TerminalComputation.
- * The TSVFilter class uses the builder pattern to construct the filter that is used to construct the output stream and perform the terminal
- * computation. The filter has the required field of a file name and optional fields for the select (field name, field value) and terminate
- * (field name, field value) operations.
- * The TSVPipeline class uses the information in the TSVFilter instance constructed based on the user's request in order to kick start the 
- * actions needed for the select and terminate operations.
- * The TSVTerminal class is a helper class for TSVPipeline that handles the specific operations needed to perform the terminal computation.
- * It performs the actual calculations of the TerminalComputation selected.
- * The TSVFormatter class is a helper class for the TSVPipeline that handles issues related to the formatting of the user's file and 
- * the information in it. It helps perform the specific operations needed in order to select.
- * The TerminalComputation enum lists out the 4 possible terminal computations the user can perform (option 2 for step 3). These are MEAN_VAL 
- * and SD_VAL for long fields and MEAN_LENGTH and SD_LENGTH for String fields.
+ * @author Mitali Juneja (mj2944) based on courseworks runner code and java tutorials from Oracle
+ * Our system contains the Car class and the RoadRace class as well as the MovingObject interface. 
+ * The MovingObject interface establishes two required methods that must be implemented by any graphics object that 
+ * moves. We include the MovingObject interface even though we only have one class implementing it, so that if we were to 
+ * improve our system by adding additional graphics objects (birds, people, etc), we would be able to do it more easily,
+ * by programming only to the MovingObject interface.
+ * The Car class includes the basic methods for a single car. This includes creating the various Shape components of the
+ * car, drawing the complete Car object on the screen, and moving the Car object across the screen.
+ * The RoadRace class aggregates a random number of Car objects (3 to 6) and contains the methods for drawing the cars
+ * to show depth (smaller cars drawn first and towards the top, larger cars drawn last and towards the bottom), moving
+ * them up both large hills (as a group) and smaller hills (individually and randomly). It also creates the slider used 
+ * control the cars' speeds, since it is directly related to the Car aggregate. 
  * 
- * For our system, all data is passed in and used physically as Strings, but we hold the header storing field types and cross check
- * with this information to make sure that any operations being performed are valid (and we parse Strings to longs where needed in the 
- * process).
- * 
- * Note that we initialize the fields for select and terminate with default values when the user is not selecting on or terminating on
- * any fields. In these cases, it is not necessary for the user to say in the Runner .select() or .terminate(). The default values
- * will be loaded without this, so in these cases the user can leave out the select or terminate methods (so if the user is not selecting
- * or terminating, initializing the filter only requires giving the file name and then calling buildRequest()).
- * 
- * SUMMARY OF PLANNED TEST CASES = 
- * All test cases will be performed on the following file, named data.tsv, unless otherwise specified (note that this file
- * contains two formatting errors that will be handled by the system in all test cases = two tabs are used in one spot in the 4th line, 
- * a String is used in place of a long in the 5th line)
- * 
- * Name	Age	Cell Phone	Zip Code
- * String	long	long	long
- * Frank	20	2121117777	10027
- * Molly	22		2121115432	10027
- * Tony	eighteen	2010001123	99876
- * Ann	19	9171118421	43210
- *
- *
- * 1. select and terminate on the file named file.txt, which does not exist
- * 
- * 2. no select and terminate("Name", TerminalComputation.MEAN_LENGTH) (terminate on mean length for name)
- * 
- * 3. select("Zip code", "10027") and terminate("Age", TerminalComputation.SD_VAL) (terminate on standard deviation value for age)
- * 
- * 4. no select and no terminate
- * 
- * 5. select("Name", "Tony") and no terminate
- * 
- * 6. select and terminate on the file as above, except without headers
- * 
- * 7. select("Birthday", "November"), a field that does not exist, and no terminate
- * 
- * 8. no select and terminate("Birthday", TerminalComputation.SD_LENGTH), a field that does not exist
- * 
- * 9. no select and terminate ("Name", TerminalComputation.MEAN_VAL), an invalid terminal computation
- * 
- * 
- * TEST RESULTS = 
- * (we will show both console outputs and the output file)
- * 
- * 1. (no output file created)
- * file name = file.tsv
- * field name = Name
- * field value = Tony
- * terminal operation = SD_VAL for Age
- * File not found
- * 
- * 2. 
- * file name = data.tsv
- * field name = null
- * field value = null
- * terminal operation = MEAN_LENGTH for Name
- * 4.333333333333333
- * 
- * output file = 
- * Name	Age	Cell Phone	Zip Code
- * String	long	long	long
- * Frank	20	2121117777	10027
- * Molly	22	2121115432	10027
- * Ann	19	9171118421	43210
- * 
- * 3. 
- * file name = data.tsv
- * field name = Zip Code
- * field value = 10027
- * terminal operation = SD_VAL for Age
- * 1.0
-
- * output file = 
- * Name	Age	Cell Phone	Zip Code
- * String	long	long	long
- * Frank	20	2121117777	10027
- * Molly	22	2121115432	10027
- *
- * 4. 
- * file name = data.tsv
- * field name = null
- * field value = null
- * terminal operation = null for null
- * 
- * output file = 
- * Name	Age	Cell Phone	Zip Code
- * String	long	long	long
- * Frank	20	2121117777	10027
- * Molly	22	2121115432	10027
- * Ann	19	9171118421	43210
- * 
- * 5. 
- * file name = data.tsv
- * field name = Name
- * field value = Tony
- * terminal operation = null for null
- * 
- * output file = 
- * Name	Age	Cell Phone	Zip Code
- * String	long	long	long
- * 
- * 6. (output file is blank)
- * file name = data.tsv
- * field name = Name
- * field value = Tony
- * terminal operation = null for null
- * missing field types line
- * 
- * 7.(no output file created)
- * file name = data.tsv
- * field name = Birthday
- * field value = November
- * terminal operation = null for null
- * select field not found in file
- * 
- * 8.
- * file name = data.tsv
- * field name = null
- * field value = null
- * terminal operation = SD_LENGTH for Birthday
- * Field not found
- * 
- * Name	Age	Cell Phone	Zip Code
- * String	long	long	long
- * Frank	20	2121117777	10027
- * Molly	22	2121115432	10027
- * Ann	19	9171118421	43210
- * 
- * 9. file name = data.tsv
- * field name = null
- * field value = null
- * terminal operation = MEAN_VAL for Name
- * Invalid terminal computation
- * 
- * Name	Age	Cell Phone	Zip Code
- * String	long	long	long
- * Frank	20	2121117777	10027
- * Molly	22	2121115432	10027
- * Ann	19	9171118421	43210
- * 
- * 
+ * TESTING =  (video is in the submission zip file along with the programming and theory parts)
+ * For this assignment, we tested which constants to use for motion in the y direction and timing.
+ * For DELAY, we initially had it set at 100, following the courseworks code fragments. However, this seemed to be too
+ * fast for the small hill motions to be visible (it required setting the speed at around 2, which we felt was too small
+ * of a number). We tried increasing it drastically, to 200, which seemed too slow, since it made it obvious when the cars
+ * were being redrawn (motion felt choppy, rather than smooth). We then tried decrementing by 10, starting from 150. 
+ * 150 and 140 still felt slightly choppy, but the greater concern was that the motion was a bit unnaturally slow. 
+ * We settled at 130, since the cars now moved across the screen at a natural pace (not too slow, but not so fast that
+ * the small hill motions could no longer be easily detected). Additionally, at 130, we were able to set the speed at 10, 
+ * which allowed for more of a range for the slider (we ultimately chose -20 to 20, since 20 felt fast enough to be labeled
+ * as a maximum speed), giving more freedom to the user while sliding.
+ * For LARGE_HILL_SIZE, we initially had it set at 40, but this felt a bit too big (if we wanted each large hill to be 
+ * pronounced and noticeable then a movement of 40 each time caused the cars to tend to go off the screen (vertically), 
+ * which we wanted to avoid). We then decreased to 30, but ran in to the same issue, although it was now less frequent. 
+ * When decreased to 20, we felt that the effect of a large hill was not as obvious and pronounced, so we settled at 25, 
+ * where the cars did not tend to consistently run off the screen vertically, but the large hills were very obviously
+ * present, with this frequency of shifting the car's translation between upwards and downwards every 25 times the screen
+ * is redrawn.
+ * For MAX_DY, we essentially tested it to fit our previously determined value of LARGE_HILL_SIZE (these quantities are
+ * very related, in that each time the screen is redrawn, the car can move a maximum distance up or down of MAX_DY, and
+ * the direction is switched every LARGE_HILL_SIZE times - first it moves up 25 times (going up a large hill), then it 
+ * moves down 25 times (going down a large hill). Presumably, different combinations of these two values could be balanced
+ * to give similar results). A MAX_DY of 10 was first tried, but this felt slightly small and didn't give the
+ * best impression of a pronounced hill. Then, 15 was tried, and this felt more appropriate so we settled on this.
+ * (we describe the testing of other constants in the classes where they appear)
  *
  */
-public class Runner {
-	
-	public static void main (String[] args){
-		System.out.println("Mitali Juneja (mj2944)\n");
-		TSVFilter myFilter = new TSVFilter
-				.Request("data")
-				.select("Zip Code", "10027")
-				.terminate("Name", TerminalComputation.MEAN_VAL)
-				.buildRequest();
-		System.out.println(myFilter);
-		TSVPipeline myPipeline = new TSVPipeline(myFilter);
-		myPipeline.performOutputRequest();
-		
-		
-	}
 
+public class Runner {
+	public static void main(String[] args){
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		JFrame myFrame = new JFrame ("race");
+		final RoadRace myRace = new RoadRace();
+		myRace.setBackground(Color.white);
+		myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		myFrame.setLayout(new BorderLayout());
+		myFrame.pack();
+		myFrame.setSize(screenSize);
+		myFrame.getContentPane().add(myRace);
+		myFrame.getContentPane().add(BorderLayout.SOUTH, myRace.getSlider());
+		myFrame.getContentPane().setSize(screenSize);
+		myFrame.setVisible(true);
+		final int DELAY = 130;
+		final int MAX_DY = 15;
+		final int LARGE_HILL_SIZE = 25;
+		int[] numRedraw = {0,0};
+		Timer myTimer = new Timer(DELAY, new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				myRace.translate((int)(MAX_DY*Math.random()), numRedraw[1], numRedraw[0]);
+				if (numRedraw[0] % LARGE_HILL_SIZE== 0){
+					numRedraw[1]++;
+				}
+				myRace.repaint();
+				numRedraw[0]++;
+			}
+		});
+		myTimer.start();
+	}
 }
